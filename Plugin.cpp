@@ -140,6 +140,21 @@ extern "C" __declspec(dllexport) bool reframework_plugin_initialize(const REFram
     functions->log_error("%s %s", "Hello", "error");
     functions->log_warn("%s %s", "Hello", "warning");
     functions->log_info("%s %s", "Hello", "info");
+    typedef LONG RtlGetVersion_1(PRTL_OSVERSIONINFOW);
+    RtlGetVersion_1* RtlGetVersion = (RtlGetVersion_1*)GetProcAddress(LoadLibrary(TEXT("ntdll.dll")), "RtlGetVersion");
+
+    OSVERSIONINFOEXW osvi = { 0 };
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEXW);
+
+    if (RtlGetVersion((PRTL_OSVERSIONINFOW)&osvi) != 0)
+        return false;
+
+    if (osvi.dwMajorVersion < 10 || (osvi.dwMajorVersion == 10 && osvi.dwBuildNumber < 17763)) {
+        SimpleError("This plugin only supports Windows 10 build 17763 or greater.");
+        return false;
+    }
+    
+
     API::get()->tdb()->find_type("app.OptionUtil")->find_method("getOptionValue")->add_hook(pre_start, post_start, false);
 
     return true;
